@@ -1,0 +1,8 @@
+#!/bin/sh
+
+REPO="${1:-/etc}"
+
+cd "$REPO"
+git add .
+git commit -m "Commit $(date '+%F %T')"
+git push

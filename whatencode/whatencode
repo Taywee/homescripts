@@ -1,0 +1,56 @@
+#!/bin/sh
+
+destination=.
+
+usage()
+{
+    cat <<USAGE
+    $0 -o [destination] {-h} [track...]
+        Outdir is the working directory by default.
+USAGE
+}
+
+while getopts 'o:h' opt
+do
+    case $opt in
+        o)    destination="$OPTARG";;
+        h)    usage; exit;;
+        ?)    usage; exit 2;;
+    esac
+done
+
+while [ $# -gt 0 ]; do
+    track="${1}"
+    shift
+
+    artist="$(mediainfo "--output=General;%Album/Performer%" "$track")"
+    artist="${artist:-$(mediainfo "--output=General;%Performer%" "$track")}"
+    artist="${artist:-$(mediainfo "--output=General;%Composer%" "$track")}"
+
+    album="$(mediainfo "--output=General;%Album%" "$track")"
+
+    title="$(mediainfo "--output=General;%Track%" "$track")"
+    title="${title:-$(mediainfo "--output=General;%Title%" "$track")}"
+
+    date="$(mediainfo "--output=General;%Released_Date%" "$track")"
+    date="${date:-$(mediainfo "--output=General;%Recorded_Date%" "$track")}"
+
+    position="$(mediainfo "--output=General;%Track/Position%" "$track" | sed "s/[[:space:]]*\/.*//")"
+
+    torrent="$artist - $album ($date) - FLAC"
+    dir="$destination/$torrent"
+    mkdir -pv "$dir"
+    cp -v "$track" "$(printf '%s/%02d - %s.flac' "$dir" "$position" "$title")"
+    torrent="$artist - $album ($date) - 320"
+    dir="$destination/$torrent"
+    mkdir -pv "$dir"
+    ffmpeg -i "$track" -c:a libmp3lame -b:a 320k -y "$(printf '%s/%02d - %s.mp3' "$dir" "$position" "$title")" 
+    torrent="$artist - $album ($date) - V0"
+    dir="$destination/$torrent"
+    mkdir -pv "$dir"
+    ffmpeg -i "$track" -c:a libmp3lame -q:a 0 -y "$(printf '%s/%02d - %s.mp3' "$dir" "$position" "$title")" 
+    torrent="$artist - $album ($date) - V2"
+    dir="$destination/$torrent"
+    mkdir -pv "$dir"
+    ffmpeg -i "$track" -c:a libmp3lame -q:a 2 -y "$(printf '%s/%02d - %s.mp3' "$dir" "$position" "$title")" 
+done

@@ -1,0 +1,41 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Copyright © 2016 Taylor C. Richberger <taywee@gmx.com>
+# This code is released under MIT license
+
+from __future__ import division, absolute_import, print_function, unicode_literals
+import six
+
+import locale
+import argparse
+import string
+
+def hanoi(iteration, tapes):
+    # Make sure the recursion works on the proper schedule, with the bottom
+    # tape only being written on the last iteration of the cycle
+    iteration = iteration % (2 ** (tapes - 1))
+
+    # An obvious algorithm takes direct advantage of the fact that the
+    # frequency of the tape is correlated by its number, with tape 0 being
+    # 2**1, tape 1 being 2**2, and so on.  This would make tape 0 be written
+    # every iteration, but by reversing the test order, each tape's frequency
+    # is reduced to half, because every other iteration is overridden by the
+    # next tape up in the cycle.  If you are iterating iterations manually
+    # (rather than using the obvious units since epoch method), this has the
+    # advantage that the longest-living tape in the cycle is written first.
+    for i in reversed(range(tapes)):
+        if iteration % (2 ** i) == 0:
+            return i
+
+def main():
+    locale.setlocale(locale.LC_ALL, '')
+    parser = argparse.ArgumentParser(description='Find the hanoi schedule for a specific sequence')
+    parser.add_argument('-t', '--tapes', help='How many tapes', type=int, required=True)
+    parser.add_argument('-i', '--iteration', help='Which iteration', type=int, required=True)
+    args = parser.parse_args()
+
+    tape = hanoi(iteration=args.iteration, tapes=args.tapes)
+    print(string.ascii_uppercase[tape])
+
+if __name__ == '__main__':
+    main()

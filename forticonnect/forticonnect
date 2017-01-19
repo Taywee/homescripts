@@ -1,0 +1,8 @@
+#!/bin/sh
+
+JSONFILE=${1:-/home/taylor/.forticonnect.json}
+USERNAME=$(jq -Mrc '.username' "$JSONFILE")
+SERVER=$(jq -Mrc '.server' "$JSONFILE")
+PORT=$(jq -Mrc '.port' "$JSONFILE")
+
+exec /opt/forticlientsslvpn/forticlientsslvpn_cli --server "${SERVER}:${PORT}" --vpnuser "$USERNAME"

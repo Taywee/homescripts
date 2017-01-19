@@ -1,0 +1,31 @@
+#!/bin/sh
+
+if [ $# -gt 0 ] && [ "$1" = 'both' ]; then
+    xrandr --output DisplayPort-0 --mode 3840x2160
+    xrandr --output HDMI-A-0 --mode 1920x1080
+    xrandr --output HDMI-A-0 --right-of DisplayPort-0
+    xrandr --output DisplayPort-0 --primary
+    #pacmd set-card-profile 0 output:hdmi-stereo
+    #pacmd set-card-profile 1 output:analog-stereo
+    xset -dpms
+    xset s off
+else
+    if xrandr | grep -qF 'current 3840 x 2160'; then
+        xrandr --output HDMI-A-0 --auto
+        xrandr --output HDMI-A-0 --mode 1920x1080
+        xrandr --output DisplayPort-0 --mode 1920x1080
+        xrandr --output HDMI-A-0 --primary
+        #pacmd set-card-profile 0 output:hdmi-stereo
+        #pacmd set-card-profile 1 off
+        xset -dpms
+        xset s off
+    else
+        xrandr --output HDMI-A-0 --off
+        xrandr --output DisplayPort-0 --auto
+        xrandr --output DisplayPort-0 --primary
+        #pacmd set-card-profile 0 off
+        #pacmd set-card-profile 1 output:analog-stereo
+        xset +dpms
+        xset s on
+    fi
+fi

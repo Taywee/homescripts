@@ -1,0 +1,34 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# To the extent possible under law, Taylor C. Richberger has waived all
+# copyright and related or neighboring rights to mutt_octet_lookup. This work
+# is published from: United States. 
+
+import argparse
+import locale
+import mailcap
+import mimetypes
+import os
+import shlex
+
+
+def main():
+    locale.setlocale(locale.LC_ALL, '')
+    parser = argparse.ArgumentParser(description='Pull in an octet-stream argument and try to run the actual mailcap on it based on extension')
+    parser.add_argument('-V', '--version', action='version', version='0.1')
+    parser.add_argument('file', help='The file to process')
+    args = parser.parse_args()
+
+    mimetypes.init()
+
+    type = mimetypes.guess_type(args.file)[0]
+
+    caps = mailcap.getcaps()
+    view = mailcap.findmatch(caps, type, filename=args.file)[0]
+    command = shlex.split(view)
+
+    os.execvp(command[0], command)
+
+if __name__ == '__main__':
+    main()
+

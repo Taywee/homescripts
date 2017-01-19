@@ -1,0 +1,14 @@
+#!/bin/bash
+
+newsbeuter -x reload
+
+UNREAD="$(newsbeuter -x print-unread)"
+echo "${UNREAD:?Could not check messages}"
+
+UNREADCOUNT="$(echo "$UNREAD" | grep -Eo '^[[:digit:]]+')"
+
+if [ "$UNREADCOUNT" -gt 0 ]; then
+    . "$HOME"/.dbus/session-bus/*
+    export DBUS_SESSION_BUS_ADDRESS DBUS_SESSION_BUS_PID DBUS_SESSION_BUS_WINDOWID
+    /usr/bin/notify-send -t 10000 newsbeuter "$UNREAD"
+fi

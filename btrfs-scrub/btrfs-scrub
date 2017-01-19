@@ -1,0 +1,23 @@
+#!/bin/sh
+
+FILESYSTEMS="$(mount -t btrfs | awk '{print $3}' )"
+
+echo filesystems: ${FILESYSTEMS}
+
+for filesystem in $FILESYSTEMS
+do
+    echo "defragmenting $filesystem"
+    btrfs filesystem defragment -rc $filesystem
+    echo "defragmenting directories in $filesystem"
+    find $filesystem -xdev -type d -print0 | parallel -0 'btrfs filesystem defragment {}'
+done
+for filesystem in $FILESYSTEMS
+do
+    echo "balancing $filesystem"
+    btrfs balance start $filesystem
+done
+for filesystem in $FILESYSTEMS
+do
+    echo "scrubbing $filesystem"
+    btrfs scrub start -B $filesystem
+done

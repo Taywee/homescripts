@@ -1,0 +1,67 @@
+#!/bin/bash
+
+destination="$HOME/Music"
+
+usage()
+{
+    cat <<USAGE
+    $0 -o [destination] {-h} [track...]
+        Does not overwrite any existing files.
+        Outdir is \$HOME by default.
+USAGE
+}
+
+while getopts 'o:h' opt
+do
+    case $opt in
+        o)    destination="$OPTARG";;
+        h)    usage; exit;;
+        ?)    usage; exit 2;;
+    esac
+done
+
+shift $((OPTIND - 1))
+
+while [ $# -gt 0 ]; do
+    track="${1}"
+    basetrack="$(basename "$track")"
+    extension="${basetrack##*.}"
+
+    # Try to get the artist
+    artist="$(mediainfo "--output=General;%Album/Performer%" "$track")"
+    artist="${artist:-$(mediainfo "--output=General;%Performer%" "$track")}"
+    artist="${artist:-$(mediainfo "--output=General;%Composer%" "$track")}"
+
+    # Try to get the album
+    album="$(mediainfo "--output=General;%Album%" "$track")"
+
+    # Try to get the trackname
+    title="$(mediainfo "--output=General;%Track%" "$track")"
+    title="${title:-$(mediainfo "--output=General;%Title%" "$track")}"
+
+    # Try to get the track position
+    position="$(mediainfo "--output=General;%Track/Position%" "$track" | sed 's/[[:space:]]*\/.*//')"
+
+    # Try to get the disc number
+    disc="$(mediainfo "--output=General;%Part/Position%" "$track" | sed 's/[[:space:]]*\/.*//')"
+
+    # Set position only if not null
+    pathposition="${position:+"$(printf '%02d-' $(echo $position | sed 's/^0*//'))"}"
+    pathdisc="${disc:+$(printf '%02d-' $(echo $disc | sed 's/^0*//'))}"
+
+    pathartist="$(echo "$artist" | tr '[A-Z]' '[a-z]' | sed -e 's/\&/and/' -e 's/ \/.*//' | tr -d -- '-$+{[(=*)]}!#~`_@^/?\\.,><";: '"'")"
+    pathalbum="$(echo "$album" | tr '[A-Z]' '[a-z]' | sed -e 's/\&/and/' -e 's/([^)]*)//' | tr -d -- '-$+{[(=*)]}!#~`_@^/?\\.,><";: '"'")"
+    pathtitle="$(echo "$title" | tr '[A-Z]' '[a-z]' | sed -e 's/\&/and/' | tr -d -- '-$+{[(=*)]}!#~`_@^/?\\.,><";: '"'")"
+
+    outfiledir="${destination}/${pathartist:?Could not determine artist for file $track}/${pathalbum:?Could not determine album for track $track}"
+    outbasename="${pathdisc}${pathposition}${pathtitle:-$position}"
+    outfile="${outfiledir}/${outbasename}.${extension:?Track had no extension}"
+
+    if [ ! -e "${outfiledir}/${outbasename}".* ]; then
+        mkdir -pv "$outfiledir"
+
+        ln -svf "$track" "$outfile"
+    fi
+
+    shift
+done

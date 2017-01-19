@@ -1,0 +1,6 @@
+#!/bin/bash
+
+account="${1:?Must specify account}"
+accountdir=~/.getmail/"rc-$account"
+
+flock -nx "$accountdir" getmail -r "$accountdir" -n

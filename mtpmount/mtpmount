@@ -1,0 +1,2 @@
+#!/bin/bash
+jmtpfs -o uid=$(id -u taylor) -o gid=$(id -g taylor) -o allow_other "$@"

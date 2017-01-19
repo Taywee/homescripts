@@ -1,0 +1,78 @@
+#!/bin/sh
+# Use a hanoi backup scheme to backup volumes
+
+die() {
+    log -s FATAL "$*"
+    exit 1
+}
+
+log() {
+    OPTIND=1
+    STATUS=INFO
+    while getopts s: flag; do
+        case $flag in
+            s)  STATUS="$OPTARG";;
+            ?)  die "log() only takes a -s flag";;
+        esac
+    done
+    shift $((OPTIND - 1))
+    echo "[$STATUS] $(date +"%Y-%m-%d %H:%M:%S"): $*"
+}
+
+run() {
+    # -c checks status and exits on failure
+    # -s chooses a good exit status, if other than 0
+    OPTIND=1
+    CHECK=
+    CHECKSTATUS=0
+    while getopts cs: flag; do
+        case $flag in
+        c)  CHECK=1;;
+        s)  CHECKSTATUS="$OPTARG";;
+        ?)  die "run() only takes a -c or an -s flag";;
+        esac
+    done
+    shift $((OPTIND - 1))
+    log -s CMD "$*"
+    eval "$*"
+    STATUS=$?
+    if [ $STATUS -ne "$CHECKSTATUS" ]; then
+        log -s ERROR "Job exited with status $STATUS"
+        if [ -n "$CHECK" ]; then
+            exit $STATUS
+        fi
+    fi
+}
+
+log 'Starting'
+
+VOL=${1:-home}
+VOLMOUNT=$(/usr/bin/mktemp -p /tmp -d "$VOL-XXXXX")
+if [ -e "/backup/$VOL/sequence" ]; then
+    PREVSEQUENCE=$(cat "/backup/$VOL/sequence")
+    SEQUENCE=$((PREVSEQUENCE + 1))
+else
+    SEQUENCE=0
+fi
+TAPE=$(/usr/local/bin/hanoi -t 13 -i "$SEQUENCE")
+
+log running with sequence $SEQUENCE, tape $TAPE
+
+run -c /bin/mount /dev/vg-sys/$VOL "$VOLMOUNT"
+run -c /sbin/btrfs subvolume snapshot -r "$VOLMOUNT/$VOL" "$VOLMOUNT/$TAPE"
+
+if [ -e "/backup/$VOL/$TAPE" ]; then
+    run -c /sbin/btrfs subvolume delete "/backup/$VOL/$TAPE"
+fi
+if [ -e "$VOLMOUNT/previous" ]; then
+    run -c "/sbin/btrfs send -p '$VOLMOUNT/previous' '$VOLMOUNT/$TAPE' | /sbin/btrfs receive /backup/$VOL"
+    run -c /sbin/btrfs subvolume delete "$VOLMOUNT/previous"
+else
+    run -c "/sbin/btrfs send '$VOLMOUNT/$TAPE' | /sbin/btrfs receive /backup/$VOL"
+fi
+
+run -c /bin/mv "$VOLMOUNT/$TAPE" "$VOLMOUNT/previous"
+run -c /bin/umount "$VOLMOUNT"
+run -c /bin/rmdir "$VOLMOUNT"
+run -c "echo $SEQUENCE > /backup/$VOL/sequence"
+log 'Finished'

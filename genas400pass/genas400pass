@@ -1,0 +1,63 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Copyright © 2016 Taylor C. Richberger <taywee@gmx.com>
+# This code is released under the license described in the LICENSE file
+
+import argparse
+import random
+import string
+
+STARTSPECIAL = '$@#'
+SPECIAL = STARTSPECIAL + '_'
+
+def rangeint(start, end):
+    rng = range(start, end + 1)
+    def checkrange(value):
+        ivalue = int(value)
+        if ivalue not in rng:
+            raise argparse.ArgumentError('value {} not in range {}'.format(ivalue, rng))
+        return ivalue
+    return checkrange
+
+def main():
+    parser = argparse.ArgumentParser(description='Generate random passwords for as400 users')
+    parser.add_argument('-d', '--digits', help='The minimum number of digits (default: %(default)s)', type=rangeint(0, 10), default=1)
+    parser.add_argument('-l', '--letters', help='The minimum number of letters (default: %(default)s)', type=rangeint(0, 10), default=1)
+    parser.add_argument('-s', '--special', help='The minimum number of chars (default: %(default)s)', type=rangeint(0, 10), default=1)
+    parser.add_argument('-a', '--ambiguous', help='Allow ambiguous characters (1, I, 0, O)', action='store_true')
+    parser.add_argument('length',
+        help='The length of the password (default: %(default)s).  This will '
+        'be exceeded if it is shorter than necessary for  the mandatory '
+        'minimum characters', type=rangeint(1, 10), nargs='?', default=10)
+    args = parser.parse_args()
+
+    if args.ambiguous:
+        letters = string.ascii_uppercase
+        digits = string.digits
+    else:
+        letters = string.ascii_uppercase.translate({ord(c): None for c in 'OI'})
+        digits = string.digits.translate({ord(c): None for c in '01'})
+
+    if args.special > 0:
+        firstchar = letters + STARTSPECIAL
+    else:
+        firstchar = letters
+
+    all = ''.join((letters, digits, SPECIAL))
+
+    chars = ([random.choice(digits) for i in range(args.digits)]
+        + [random.choice(letters) for i in range(args.letters)]
+        + [random.choice(SPECIAL) for i in range(args.special)])
+
+    # Get up to one less than the length
+    while len(chars) < (args.length - 1):
+        chars.append(random.choice(all))
+
+    random.shuffle(chars)
+
+    # First char must not be numeric or underline character
+    chars.insert(0, random.choice(firstchar))
+    print(''.join(chars))
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,25 @@
+#!/bin/sh
+
+usage() {
+    cat <<HERE
+    $0 [ open | close ]
+HERE
+}
+
+if [ $# -eq 0 ]
+then
+    usage
+    exit 1
+fi
+
+if [ "$1" = open ]
+then
+    cryptsetup open --type luks --key-file /etc/keyfiles/sdcard /dev/disk/by-uuid/c48b7a9a-ee21-42a1-96f0-c0eb1ea447a1 crypt-sd
+elif [ "$1" = close ]
+then
+    cryptsetup close crypt-sd
+else
+    usage
+    exit 1
+fi
+
