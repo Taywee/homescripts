@@ -1,3 +1,3 @@
 #!/bin/sh
 
-exec /usr/bin/urxvt -e nvim -c 'set textwidth=0' -c 'set wrapmargin=0' "$@"
+exec /usr/bin/urxvt -e nvim -b -c 'set noeol' -c 'set textwidth=0' -c 'set wrapmargin=0' "$@"

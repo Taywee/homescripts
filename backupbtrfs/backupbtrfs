@@ -54,7 +54,7 @@ if [ -e "/backup/$VOL/sequence" ]; then
 else
     SEQUENCE=0
 fi
-TAPE=$(/usr/local/bin/hanoi -t 13 -i "$SEQUENCE")
+TAPE=$(/usr/local/bin/hanoi -t 10 -i "$SEQUENCE")
 
 log running with sequence $SEQUENCE, tape $TAPE
 
