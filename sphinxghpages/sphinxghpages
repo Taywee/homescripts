@@ -1,0 +1,13 @@
+#!/bin/sh
+
+set -e
+
+cd "$(git rev-parse --show-toplevel)"
+cd docs
+rm -r _build/html/* || true
+rm -r _build/doctrees || true
+make html
+cd _build/html
+git add .
+git commit -m 'DOCUMENTATION REBUILD'
+git push

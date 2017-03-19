@@ -1,3 +1,0 @@
-#!/bin/bash
-
-exec /usr/bin/mpc -h ~/.mpd/socket -f "%position%: %artist% -- %album% - [%track%: ]%title%" "$@"

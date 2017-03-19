@@ -1,0 +1,3 @@
+#!/bin/sh
+
+CALIBRE_CONFIG_DIRECTORY=~/Documents/calibre calibre
